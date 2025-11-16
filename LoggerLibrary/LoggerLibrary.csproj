@@ -1,25 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<Version>0.1.1</Version>
+		<Version>0.1.5</Version>
 		<PackageId>Serilog.TechTeaStudio.Wrap</PackageId>
 		<Authors>Ronald Ryan</Authors>
 		<Company>Tech Tea Studio</Company>
 		<Description>A logging library for .NET applications using Serilog, providing easy configuration and integration.</Description>
 		<PackageTags>Serilog, Logging, DependencyInjection, .NET</PackageTags>
-		<Copyright>Copyright © Tech Tea Studio 2024</Copyright>
+		<Copyright>Copyright © Tech Tea Studio 2026</Copyright>
 		<RepositoryUrl>https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap</RepositoryUrl>
 		<ProjectUrl>https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap</ProjectUrl>
 		<PackageIcon>icon.png</PackageIcon>
 	</PropertyGroup>
+	
 	<PropertyGroup>
 	<PackageReleaseNotes>
-		Initial release of the logging library for .NET applications using Serilog.
-		(I fix id)
-		Provides simple configuration, integration, and support for various logging sinks.
+		Net.10 Update: Migrated to .NET 10.0 for enhanced performance and features.
+		Dependency Updates: Updated Microsoft.Extensions.DependencyInjection to version 9.0.0-preview.7.24405.7 and Serilog to version 4.0.0 for improved stability and new functionalities.
+		Bug Fixes: Resolved minor bugs to enhance overall reliability.
 	</PackageReleaseNotes>
 	</PropertyGroup>
 	<PropertyGroup>
@@ -29,9 +30,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0-preview.7.24405.7" />
-		<PackageReference Include="Serilog" Version="4.0.0" />
-		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+		<PackageReference Include="Serilog" Version="4.3.1-dev-02395" />
+		<PackageReference Include="Serilog.Sinks.File" Version="7.0.1-dev-02315" />
 	</ItemGroup>
 	
 	<ItemGroup>
