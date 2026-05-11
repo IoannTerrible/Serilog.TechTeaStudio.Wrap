@@ -1,51 +1,99 @@
-﻿using Serilog;
+using System.Globalization;
+using System.Reflection;
+using Serilog;
 
 namespace LoggerLibrary;
 
-/// <summary>Default implementation of ILoggerConfig that configures Serilog with file sinks.</summary>
+/// <summary>Default implementation of <see cref="ILoggerConfig"/> that builds a Serilog logger with file and console sinks.</summary>
 public class LoggerConfig : ILoggerConfig
 {
-    /// <summary>Configures the logger with the specified options.</summary>
+    private static readonly string? AssemblyVersion = ResolveAssemblyVersion();
+
+    /// <summary>Builds a Serilog <see cref="Serilog.ILogger"/> from <paramref name="options"/>. Does not mutate <see cref="Log.Logger"/>.</summary>
     /// <param name="options">The logger configuration options.</param>
-    /// <exception cref="ArgumentNullException">Thrown when options is null.</exception>
+    /// <returns>A configured <see cref="Serilog.ILogger"/> instance.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="options"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when options contain invalid values.</exception>
-    public void Configure(LoggerOptions options)
+    public Serilog.ILogger Build(LoggerOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        
+
         if (string.IsNullOrWhiteSpace(options.LogDirectory))
         {
             throw new ArgumentException("LogDirectory cannot be null or whitespace.", nameof(options));
         }
-        
-        if (options.LogEventLevels == null || options.LogEventLevels.Length == 0)
+
+        if (options.SeparateFilesPerLevel && (options.LogEventLevels == null || options.LogEventLevels.Length == 0))
         {
-            throw new ArgumentException("LogEventLevels cannot be null or empty.", nameof(options));
+            throw new ArgumentException("LogEventLevels cannot be null or empty when SeparateFilesPerLevel is true.", nameof(options));
         }
 
-        if (!Directory.Exists(options.LogDirectory))
+        if (!options.SeparateFilesPerLevel && string.IsNullOrWhiteSpace(options.LogFileName))
         {
-            Directory.CreateDirectory(options.LogDirectory);
-            Log.Information("Created logs directory: {LogDirectory}", options.LogDirectory);
+            throw new ArgumentException("LogFileName cannot be null or whitespace when SeparateFilesPerLevel is false.", nameof(options));
         }
+
+        Directory.CreateDirectory(options.LogDirectory);
 
         var loggerConfig = new LoggerConfiguration()
             .MinimumLevel.Is(options.MinimumLevel)
             .Enrich.FromLogContext();
 
-        foreach (var logEventLevel in options.LogEventLevels)
+        if (!string.IsNullOrEmpty(AssemblyVersion))
         {
-            string logFileName = $"{logEventLevel.ToString().ToLower()}Log.txt";
-            loggerConfig.WriteTo.Logger(lc => lc
-                .Filter.ByIncludingOnly(evt => evt.Level == logEventLevel)
-                .WriteTo.File(
-                    Path.Combine(options.LogDirectory, logFileName),
-                    rollingInterval: options.RollingInterval,
-                    outputTemplate: options.OutputTemplate,
-                    retainedFileCountLimit: null)
-            );
+            loggerConfig = loggerConfig.Enrich.WithProperty("AssemblyVersion", AssemblyVersion);
         }
 
-        Log.Logger = loggerConfig.CreateLogger();
+        if (options.EnableConsole)
+        {
+            loggerConfig = loggerConfig.WriteTo.Console(outputTemplate: options.OutputTemplate);
+        }
+
+        if (options.SeparateFilesPerLevel)
+        {
+            foreach (var level in options.LogEventLevels)
+            {
+                var fileName = $"{level.ToString().ToLowerInvariant()}Log.txt";
+                var path = Path.Combine(options.LogDirectory, fileName);
+                var captured = level;
+                loggerConfig.WriteTo.Logger(lc => lc
+                    .Filter.ByIncludingOnly(evt => evt.Level == captured)
+                    .WriteTo.File(
+                        path,
+                        rollingInterval: options.RollingInterval,
+                        outputTemplate: options.OutputTemplate,
+                        retainedFileCountLimit: options.RetainedFileCountLimit));
+            }
+        }
+        else
+        {
+            var path = Path.Combine(options.LogDirectory, options.LogFileName);
+            loggerConfig.WriteTo.File(
+                path,
+                rollingInterval: options.RollingInterval,
+                outputTemplate: options.OutputTemplate,
+                retainedFileCountLimit: options.RetainedFileCountLimit);
+        }
+
+        return loggerConfig.CreateLogger();
+    }
+
+    /// <inheritdoc />
+    [Obsolete("Use Build(LoggerOptions) and inject the returned ILogger via DI instead of mutating the global Log.Logger.")]
+    public void Configure(LoggerOptions options)
+    {
+        Log.Logger = Build(options);
+    }
+
+    private static string? ResolveAssemblyVersion()
+    {
+        try
+        {
+            return Assembly.GetEntryAssembly()?.GetName().Version?.ToString();
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

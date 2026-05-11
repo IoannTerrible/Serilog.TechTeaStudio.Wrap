@@ -10,8 +10,8 @@ jobs:
   publish:
     uses: TechTeaStudio/.github/.github/workflows/nuget-publish-reusable.yml@main
     with:
-      solution: Serilog.TeachTeaStudio.Wrap.sln
+      solution: Serilog.TechTeaStudio.Wrap.sln
       projects_glob: LoggerLibrary/*.csproj
-      skip_tests: true
+      skip_tests: false
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

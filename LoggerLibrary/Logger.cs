@@ -1,145 +1,69 @@
-﻿using System.Reflection;
-using Serilog;
 using Serilog.Events;
 
 namespace LoggerLibrary;
 
-/// <summary>Provides logging functionality using Serilog with structured logging support.</summary>
-public class Logger
+/// <summary>Convenience wrapper around an injected Serilog <see cref="Serilog.ILogger"/>.</summary>
+public sealed class Logger
 {
-	private readonly Serilog.ILogger _logger;
-	private readonly ILoggerConfig _loggerConfig;
+    private readonly Serilog.ILogger _logger;
 
-	/// <summary>Initializes a new instance of the Logger class.</summary>
-	/// <param name="loggerConfig">The logger configuration.</param>
-	/// <exception cref="ArgumentNullException">Thrown when loggerConfig is null.</exception>
-	public Logger(ILoggerConfig loggerConfig)
-	{
-		_loggerConfig = loggerConfig ?? throw new ArgumentNullException(nameof(loggerConfig));
-		_logger = Log.Logger;
-	}
+    /// <summary>Initializes a new instance of the <see cref="Logger"/> class.</summary>
+    /// <param name="logger">The Serilog logger instance to use.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    public Logger(Serilog.ILogger logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
 
-	/// <summary>Initializes a new instance of the Logger class with a specific Serilog logger.</summary>
-	/// <param name="loggerConfig">The logger configuration.</param>
-	/// <param name="logger">The Serilog logger instance to use.</param>
-	/// <exception cref="ArgumentNullException">Thrown when loggerConfig or logger is null.</exception>
-	public Logger(ILoggerConfig loggerConfig, Serilog.ILogger logger)
-	{
-		_loggerConfig = loggerConfig ?? throw new ArgumentNullException(nameof(loggerConfig));
-		_logger = logger ?? throw new ArgumentNullException(nameof(logger));
-	}
+    /// <summary>Logs a message at the specified level.</summary>
+    public void LogEvent(LogEventLevel level, string message, Exception? ex = null)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            throw new ArgumentException("Message cannot be null or whitespace.", nameof(message));
+        }
 
-	/// <summary>Logs an event at the specified level.</summary>
-	/// <param name="logEventLevel">The log event level.</param>
-	/// <param name="message">The message to log.</param>
-	/// <param name="ex">Optional exception to include in the log.</param>
-	public void LogEvent(LogEventLevel logEventLevel, string message, Exception? ex = null)
-	{
-		if (string.IsNullOrWhiteSpace(message))
-		{
-			throw new ArgumentException("Message cannot be null or whitespace.", nameof(message));
-		}
+        if (ex is null)
+        {
+            _logger.Write(level, message);
+        }
+        else
+        {
+            _logger.Write(level, ex, message);
+        }
+    }
 
-		var logger = _logger;
-		
-		// Add assembly version for debug level
-		if (logEventLevel == LogEventLevel.Debug)
-		{
-			var assemblyVersion = GetAssemblyVersion();
-			if (!string.IsNullOrEmpty(assemblyVersion))
-			{
-				logger = logger.ForContext("AssemblyVersion", assemblyVersion);
-			}
-		}
+    /// <summary>Logs a structured message at the specified level.</summary>
+    public void LogEvent(LogEventLevel level, string messageTemplate, params object?[] propertyValues)
+    {
+        if (string.IsNullOrWhiteSpace(messageTemplate))
+        {
+            throw new ArgumentException("Message template cannot be null or whitespace.", nameof(messageTemplate));
+        }
 
-		if (ex != null)
-		{
-			logger.Write(logEventLevel, ex, message);
-		}
-		else
-		{
-			logger.Write(logEventLevel, message);
-		}
-	}
+        _logger.Write(level, messageTemplate, propertyValues);
+    }
 
-	/// <summary>Logs an event at the specified level with structured properties.</summary>
-	/// <param name="logEventLevel">The log event level.</param>
-	/// <param name="message">The message template to log.</param>
-	/// <param name="propertyValues">Optional property values for structured logging.</param>
-	public void LogEvent(LogEventLevel logEventLevel, string message, params object[] propertyValues)
-	{
-		if (string.IsNullOrWhiteSpace(message))
-		{
-			throw new ArgumentException("Message cannot be null or whitespace.", nameof(message));
-		}
+    /// <summary>Logs a structured message with an exception.</summary>
+    public void LogEvent(LogEventLevel level, Exception ex, string messageTemplate, params object?[] propertyValues)
+    {
+        ArgumentNullException.ThrowIfNull(ex);
 
-		var logger = _logger;
-		
-		if (logEventLevel == LogEventLevel.Debug)
-		{
-			var assemblyVersion = GetAssemblyVersion();
-			if (!string.IsNullOrEmpty(assemblyVersion))
-			{
-				logger = logger.ForContext("AssemblyVersion", assemblyVersion);
-			}
-		}
+        if (string.IsNullOrWhiteSpace(messageTemplate))
+        {
+            throw new ArgumentException("Message template cannot be null or whitespace.", nameof(messageTemplate));
+        }
 
-		logger.Write(logEventLevel, message, propertyValues);
-	}
+        _logger.Write(level, ex, messageTemplate, propertyValues);
+    }
 
-	/// <summary>Logs an event at the specified level with an exception and structured properties.</summary>
-	/// <param name="logEventLevel">The log event level.</param>
-	/// <param name="ex">The exception to log.</param>
-	/// <param name="message">The message template to log.</param>
-	/// <param name="propertyValues">Optional property values for structured logging.</param>
-	public void LogEvent(LogEventLevel logEventLevel, Exception ex, string message, params object[] propertyValues)
-	{
-		ArgumentNullException.ThrowIfNull(ex);
-		
-		if (string.IsNullOrWhiteSpace(message))
-		{
-			throw new ArgumentException("Message cannot be null or whitespace.", nameof(message));
-		}
+    /// <summary>Returns a new logger enriched with the specified property.</summary>
+    public Serilog.ILogger ForContext(string propertyName, object? value, bool destructureObjects = false) =>
+        _logger.ForContext(propertyName, value, destructureObjects);
 
-		var logger = _logger;
-		
-		if (logEventLevel == LogEventLevel.Debug)
-		{
-			var assemblyVersion = GetAssemblyVersion();
-			if (!string.IsNullOrEmpty(assemblyVersion))
-			{
-				logger = logger.ForContext("AssemblyVersion", assemblyVersion);
-			}
-		}
+    /// <summary>Shuts down the global Serilog pipeline, flushing all pending log entries. Call once on application exit.</summary>
+    public static void Shutdown() => Serilog.Log.CloseAndFlush();
 
-		logger.Write(logEventLevel, ex, message, propertyValues);
-	}
-
-	/// <summary>Flushes the logger, ensuring all pending log entries are written.</summary>
-	public void Flush()
-	{
-		Log.CloseAndFlush();
-	}
-
-	/// <summary>Flushes the logger asynchronously, ensuring all pending log entries are written.</summary>
-	/// <returns>A task representing the asynchronous flush operation.</returns>
-	public Task FlushAsync()
-	{
-		return Task.Run(() => Log.CloseAndFlush());
-	}
-
-	private static string? GetAssemblyVersion()
-	{
-		try
-		{
-			var assembly = Assembly.GetEntryAssembly();
-			return assembly?.GetName().Version?.ToString();
-		}
-		catch (Exception ex)
-		{
-			Log.Error(ex, "Failed to get assembly version");
-			return null;
-		}
-	}
+    /// <summary>Asynchronously shuts down the global Serilog pipeline, flushing all pending log entries.</summary>
+    public static Task ShutdownAsync() => Serilog.Log.CloseAndFlushAsync().AsTask();
 }
-

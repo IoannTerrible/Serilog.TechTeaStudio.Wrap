@@ -6,15 +6,15 @@ Pushed automatically on push to `main`.
 
 ## Structure
 
-Solution: `Serilog.TeachTeaStudio.Wrap.sln`
+Solution: `Serilog.TechTeaStudio.Wrap.sln`
 Package: `LoggerLibrary/LoggerLibrary.csproj`
 Targets: `net8.0;net9.0;net10.0`
 
 ## Build & Test
 
 ```bash
-dotnet build Serilog.TeachTeaStudio.Wrap.sln
-dotnet test Serilog.TeachTeaStudio.Wrap.sln
+dotnet build Serilog.TechTeaStudio.Wrap.sln
+dotnet test Serilog.TechTeaStudio.Wrap.sln
 ```
 
 ## Release flow
