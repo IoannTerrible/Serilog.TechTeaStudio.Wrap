@@ -69,5 +69,10 @@ public static class LoggerServiceExtensions
         {
             throw new ArgumentException("LogFileName cannot be null or whitespace when SeparateFilesPerLevel is false.", nameof(options));
         }
+
+        if (options.FileSizeLimitBytes is <= 0)
+        {
+            throw new ArgumentException("FileSizeLimitBytes must be positive or null.", nameof(options));
+        }
     }
 }

@@ -4,7 +4,7 @@
 		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<Version>0.2.0</Version>
+		<Version>0.3.0</Version>
 		<PackageId>Serilog.TechTeaStudio.Wrap</PackageId>
 		<Authors>Ronald Ryan</Authors>
 		<Company>Tech Tea Studio</Company>
@@ -20,6 +20,25 @@
 
 	<PropertyGroup>
 		<PackageReleaseNotes>
+v0.3.0 — Sink callback and JSON formatter.
+
+Added:
+  * LoggerOptions.ConfigureLogger — Action&lt;LoggerConfiguration&gt; callback for attaching extra sinks (Seq, Elastic, Application Insights, Loki) and enrichers. Invoked after built-in console/file sinks are wired, before CreateLogger().
+  * LoggerOptions.UseJsonFormatter — when true, built-in sinks emit one CompactJsonFormatter line per event (ready for log aggregators). OutputTemplate is ignored in this mode.
+  * New dependency: Serilog.Formatting.Compact 3.0.0.
+
+Fixed:
+  * README API section referenced removed Flush()/FlushAsync() methods — now correctly documents Logger.Shutdown()/ShutdownAsync().
+
+v0.2.1 — Configurable file size limit.
+
+Added:
+  * LoggerOptions.FileSizeLimitBytes (default 1 GB, null = unlimited).
+  * LoggerOptions.RollOnFileSizeLimit (default false) — roll into a new file when the size limit is hit.
+
+Fixed:
+  * README configuration table now lists all LoggerOptions properties and the corrected MinimumLevel default.
+
 v0.2.0 — Major refactor.
 
 Added:
@@ -57,6 +76,7 @@ Full changelog: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/blob
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
 		<PackageReference Include="Serilog" Version="4.2.0" />
 		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.0" />
+		<PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
 	</ItemGroup>

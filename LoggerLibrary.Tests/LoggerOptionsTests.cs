@@ -18,6 +18,10 @@ public class LoggerOptionsTests
         Assert.Equal(LogEventLevel.Information, o.MinimumLevel);
         Assert.True(o.EnableConsole);
         Assert.Equal(31, o.RetainedFileCountLimit);
+        Assert.Equal(1L * 1024 * 1024 * 1024, o.FileSizeLimitBytes);
+        Assert.False(o.RollOnFileSizeLimit);
+        Assert.False(o.UseJsonFormatter);
+        Assert.Null(o.ConfigureLogger);
         Assert.Contains(LogEventLevel.Error, o.LogEventLevels);
     }
 }

@@ -1,6 +1,9 @@
 using System.Globalization;
 using System.Reflection;
 using Serilog;
+using Serilog.Configuration;
+using Serilog.Formatting;
+using Serilog.Formatting.Compact;
 
 namespace LoggerLibrary;
 
@@ -33,6 +36,11 @@ public class LoggerConfig : ILoggerConfig
             throw new ArgumentException("LogFileName cannot be null or whitespace when SeparateFilesPerLevel is false.", nameof(options));
         }
 
+        if (options.FileSizeLimitBytes is <= 0)
+        {
+            throw new ArgumentException("FileSizeLimitBytes must be positive or null.", nameof(options));
+        }
+
         Directory.CreateDirectory(options.LogDirectory);
 
         var loggerConfig = new LoggerConfiguration()
@@ -44,9 +52,37 @@ public class LoggerConfig : ILoggerConfig
             loggerConfig = loggerConfig.Enrich.WithProperty("AssemblyVersion", AssemblyVersion);
         }
 
+        ITextFormatter? jsonFormatter = options.UseJsonFormatter ? new CompactJsonFormatter() : null;
+
         if (options.EnableConsole)
         {
-            loggerConfig = loggerConfig.WriteTo.Console(outputTemplate: options.OutputTemplate);
+            loggerConfig = jsonFormatter is not null
+                ? loggerConfig.WriteTo.Console(jsonFormatter)
+                : loggerConfig.WriteTo.Console(outputTemplate: options.OutputTemplate);
+        }
+
+        void AttachFile(LoggerSinkConfiguration sink, string path)
+        {
+            if (jsonFormatter is not null)
+            {
+                sink.File(
+                    jsonFormatter,
+                    path,
+                    rollingInterval: options.RollingInterval,
+                    retainedFileCountLimit: options.RetainedFileCountLimit,
+                    fileSizeLimitBytes: options.FileSizeLimitBytes,
+                    rollOnFileSizeLimit: options.RollOnFileSizeLimit);
+            }
+            else
+            {
+                sink.File(
+                    path,
+                    rollingInterval: options.RollingInterval,
+                    outputTemplate: options.OutputTemplate,
+                    retainedFileCountLimit: options.RetainedFileCountLimit,
+                    fileSizeLimitBytes: options.FileSizeLimitBytes,
+                    rollOnFileSizeLimit: options.RollOnFileSizeLimit);
+            }
         }
 
         if (options.SeparateFilesPerLevel)
@@ -56,24 +92,20 @@ public class LoggerConfig : ILoggerConfig
                 var fileName = $"{level.ToString().ToLowerInvariant()}Log.txt";
                 var path = Path.Combine(options.LogDirectory, fileName);
                 var captured = level;
-                loggerConfig.WriteTo.Logger(lc => lc
-                    .Filter.ByIncludingOnly(evt => evt.Level == captured)
-                    .WriteTo.File(
-                        path,
-                        rollingInterval: options.RollingInterval,
-                        outputTemplate: options.OutputTemplate,
-                        retainedFileCountLimit: options.RetainedFileCountLimit));
+                loggerConfig.WriteTo.Logger(lc =>
+                {
+                    lc.Filter.ByIncludingOnly(evt => evt.Level == captured);
+                    AttachFile(lc.WriteTo, path);
+                });
             }
         }
         else
         {
             var path = Path.Combine(options.LogDirectory, options.LogFileName);
-            loggerConfig.WriteTo.File(
-                path,
-                rollingInterval: options.RollingInterval,
-                outputTemplate: options.OutputTemplate,
-                retainedFileCountLimit: options.RetainedFileCountLimit);
+            AttachFile(loggerConfig.WriteTo, path);
         }
+
+        options.ConfigureLogger?.Invoke(loggerConfig);
 
         return loggerConfig.CreateLogger();
     }

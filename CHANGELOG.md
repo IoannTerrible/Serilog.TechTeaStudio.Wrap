@@ -3,6 +3,25 @@
 All notable changes to this package are documented here.
 Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-05-19
+
+### Added
+- **`LoggerOptions.ConfigureLogger`** — `Action<LoggerConfiguration>?` callback invoked after built-in console/file sinks are wired, before `CreateLogger()`. Lets users attach extra sinks (Seq, Elastic, Application Insights, Loki) and enrichers without forking the library. Works with both `AddLogger(o => …)` and `AddLogger(IConfiguration, postConfigure: …)`.
+- **`LoggerOptions.UseJsonFormatter`** (default `false`) — when true, built-in console and file sinks emit one compact JSON document per event via `Serilog.Formatting.Compact.CompactJsonFormatter`. Designed for shipping to log aggregators. `OutputTemplate` is ignored when this is on.
+- New dependency: `Serilog.Formatting.Compact 3.0.0`.
+
+### Fixed
+- README API section referenced the long-removed `logger.Flush()` / `logger.FlushAsync()` instance methods — now correctly documents the static `Logger.Shutdown()` / `Logger.ShutdownAsync()` (removed in 0.2.0).
+
+## [0.2.1] — 2026-05-19
+
+### Added
+- **`LoggerOptions.FileSizeLimitBytes`** (default `1 GB`) — caps the size of each log file. `null` means unlimited. Throws `ArgumentException` if zero or negative.
+- **`LoggerOptions.RollOnFileSizeLimit`** (default `false`) — when true, a new file is started once `FileSizeLimitBytes` is reached. Combine with `RollingInterval` for size + time rolling, or set `RollingInterval = Infinite` for size-only.
+
+### Fixed
+- README configuration table was missing `SeparateFilesPerLevel`, `LogFileName`, `RetainedFileCountLimit`, `EnableConsole`, and the corrected `MinimumLevel` default (`Information`, not `Verbose`).
+
 ## [0.2.0] — 2026-05-11
 
 Major refactor. Public API is mostly backward compatible at the call-site level (`AddLogger` + `Logger.LogEvent`), but a handful of breaking changes apply — see below.
@@ -75,6 +94,8 @@ services.AddLogger(builder.Configuration.GetSection("Logging:File"));
 
 - Initial Serilog wrapper with DI integration, file sinks, and per-level file output.
 
+[0.3.0]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.3.0
+[0.2.1]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.2.1
 [0.2.0]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.2.0
 [0.1.6]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.1.6
 [0.1.0]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.1.0

@@ -43,21 +43,76 @@ logger.LogEvent(LogEventLevel.Information, "App started with {User}", Environmen
 
 `LoggerOptions`:
 
-| Property              | Default                                                                  | Notes                              |
-|-----------------------|--------------------------------------------------------------------------|------------------------------------|
-| `LogDirectory`        | `"logs"`                                                                 | Created if missing.                |
-| `LogEventLevels`      | `Information, Warning, Error, Fatal`                                     | One output file per level.         |
-| `RollingInterval`     | `RollingInterval.Day`                                                    | Serilog rolling interval.          |
-| `OutputTemplate`      | `"{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message:lj} {NewLine}{Exception}"` | Standard Serilog template. |
-| `MinimumLevel`        | `LogEventLevel.Verbose`                                                  | Global minimum.                    |
+| Property                 | Default                                                                  | Notes                                                                    |
+|--------------------------|--------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| `LogDirectory`           | `"logs"`                                                                 | Created if missing.                                                      |
+| `SeparateFilesPerLevel`  | `false`                                                                  | When true, writes one file per level (e.g. `informationLog.txt`).         |
+| `LogFileName`            | `"log.txt"`                                                              | Used in single-file mode.                                                |
+| `LogEventLevels`         | `Information, Warning, Error, Fatal`                                     | Levels emitted when `SeparateFilesPerLevel` is true.                     |
+| `RollingInterval`        | `RollingInterval.Day`                                                    | Serilog rolling interval (`Infinite`, `Year`, `Month`, `Day`, `Hour`, `Minute`). |
+| `FileSizeLimitBytes`     | `1 GB`                                                                   | Max bytes per file. `null` = unlimited.                                  |
+| `RollOnFileSizeLimit`    | `false`                                                                  | When true, a new file is started once the size limit is hit.             |
+| `RetainedFileCountLimit` | `31`                                                                     | Max number of rolled files to keep. `null` = unlimited.                  |
+| `OutputTemplate`         | `"{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {NewLine}{Exception}"` | Standard Serilog template. Ignored when `UseJsonFormatter` is true.      |
+| `UseJsonFormatter`       | `false`                                                                  | Switch built-in sinks to `CompactJsonFormatter` for log aggregators.     |
+| `EnableConsole`          | `true`                                                                   | Also writes to console.                                                  |
+| `MinimumLevel`           | `LogEventLevel.Information`                                              | Global minimum.                                                          |
+| `ConfigureLogger`        | `null`                                                                   | Post-configure `Action<LoggerConfiguration>` for extra sinks/enrichers.  |
+
+### Size-based rolling
+
+Serilog's file sink silently stops writing when `FileSizeLimitBytes` is reached unless `RollOnFileSizeLimit` is true. To cap each file at 50 MB and roll instead of dropping:
+
+```csharp
+services.AddLogger(o =>
+{
+    o.FileSizeLimitBytes  = 50L * 1024 * 1024;
+    o.RollOnFileSizeLimit = true;
+});
+```
+
+Time-based and size-based rolling combine — set `RollingInterval = RollingInterval.Infinite` if you only want size-based.
+
+### JSON output
+
+For shipping to Seq, Elastic, Loki, etc., switch built-in sinks to compact JSON:
+
+```csharp
+services.AddLogger(o => o.UseJsonFormatter = true);
+```
+
+Each event becomes one `CompactJsonFormatter` line (`{"@t":"…","@mt":"…","User":"tester"}`). `OutputTemplate` is ignored in this mode.
+
+### Adding more sinks
+
+Use `ConfigureLogger` to attach any sink the wrapper does not expose directly — runs after the built-in console/file sinks, before `CreateLogger()`:
+
+```csharp
+services.AddLogger(o =>
+{
+    o.UseJsonFormatter = true;
+    o.ConfigureLogger  = lc => lc
+        .WriteTo.Seq("http://localhost:5341")
+        .Enrich.WithMachineName();
+});
+```
+
+Same callback works with the `IConfiguration` overload via `postConfigure`:
+
+```csharp
+services.AddLogger(builder.Configuration.GetSection("Logging:File"),
+    o => o.ConfigureLogger = lc => lc.WriteTo.Seq("http://localhost:5341"));
+```
 
 ## API
 
 ```csharp
 logger.LogEvent(LogEventLevel.Information, "User {UserId} logged in", userId);
 logger.LogEvent(LogEventLevel.Error, exception, "Failed to process {OrderId}", orderId);
-logger.Flush();         // synchronous flush + close
-await logger.FlushAsync();
+
+// At app shutdown — flush and close the global Serilog pipeline.
+Logger.Shutdown();             // synchronous
+await Logger.ShutdownAsync();  // async
 ```
 
 ## Build & test
