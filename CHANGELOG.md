@@ -3,6 +3,11 @@
 All notable changes to this package are documented here.
 Format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-11-11
+
+### Added
+- `net11.0` target framework, next to `net8.0`, `net9.0` and `net10.0`. No code or API changes.
+
 ## [0.3.0] — 2026-05-19
 
 ### Added
@@ -94,6 +99,7 @@ services.AddLogger(builder.Configuration.GetSection("Logging:File"));
 
 - Initial Serilog wrapper with DI integration, file sinks, and per-level file output.
 
+[0.3.1]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.3.1
 [0.3.0]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.3.0
 [0.2.1]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.2.1
 [0.2.0]: https://github.com/IoannTerrible/Serilog.TechTeaStudio.Wrap/releases/tag/v0.2.0

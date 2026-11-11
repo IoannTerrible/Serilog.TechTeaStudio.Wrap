@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<TargetFrameworks>net8.0;net9.0;net10.0;net11.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<Version>0.3.0</Version>
+		<Version>0.3.1</Version>
 		<PackageId>Serilog.TechTeaStudio.Wrap</PackageId>
 		<Authors>Ronald Ryan</Authors>
 		<Company>Tech Tea Studio</Company>
@@ -20,6 +20,11 @@
 
 	<PropertyGroup>
 		<PackageReleaseNotes>
+v0.3.1 — net11.0 target.
+
+Added:
+  * net11.0 target framework, next to net8.0, net9.0 and net10.0. No code or API changes.
+
 v0.3.0 — Sink callback and JSON formatter.
 
 Added:

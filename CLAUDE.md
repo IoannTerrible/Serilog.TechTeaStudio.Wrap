@@ -8,7 +8,7 @@ Pushed automatically on push to `main`.
 
 Solution: `Serilog.TechTeaStudio.Wrap.sln`
 Package: `LoggerLibrary/LoggerLibrary.csproj`
-Targets: `net8.0;net9.0;net10.0`
+Targets: `net8.0;net9.0;net10.0;net11.0`
 
 ## Build & Test
 

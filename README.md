@@ -1,6 +1,6 @@
 # Serilog.TechTeaStudio.Wrap
 
-A thin Serilog wrapper with DI integration for .NET 8 / 9 / 10. Configure file-based logging with one line of startup code and get a level-per-file layout out of the box.
+A thin Serilog wrapper with DI integration for .NET 8 / 9 / 10 / 11. Configure file-based logging with one line of startup code and get a level-per-file layout out of the box.
 
 [![NuGet](https://img.shields.io/nuget/v/Serilog.TechTeaStudio.Wrap.svg)](https://www.nuget.org/packages/Serilog.TechTeaStudio.Wrap)
 
